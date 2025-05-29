@@ -1,1 +1,52 @@
-nothing yet
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Family Dashboard</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        {% for member in members %}
+        <button onclick="showTab('{{ member }}')">{{ member }}</button>
+        {% endfor %}
+        <hr>
+        <button onclick="showTab('add')">+ Add Member</button>
+    </div>
+
+    <div class="main" id="main">
+        {% for member in members %}
+        <div id="tab-{{ member }}" class="tab-content">
+            <h2>{{ member }}</h2>
+            <form method="post" action="/delete-member">
+                <input type="hidden" name="member" value="{{ member }}">
+                <button type="submit">Delete Member</button>
+            </form>
+            <form method="post" action="/upload-photo" enctype="multipart/form-data">
+                <input type="hidden" name="member" value="{{ member }}">
+                <input type="file" name="photos" accept="image/*" multiple required>
+                <button type="submit">Upload Photo</button>
+            </form>
+        </div>
+        {% endfor %}
+
+        <div id="tab-add" class="tab-content">
+            <h2>Add New Member</h2>
+            <form id="add-member-form">
+                <input type="text" id="new_member_name" placeholder="Enter name" required>
+                <button type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+
+    <script>
+        if (window.members && window.members.length > 0) {
+            showTab(window.members[0]);
+        } else {
+            showTab('add');
+        }
+    </script>
+
+</body>
+</html>

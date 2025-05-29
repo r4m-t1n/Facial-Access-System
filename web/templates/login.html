@@ -1,54 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Login</title>
-  <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: #f0f0f0;
-      font-family: sans-serif;
-    }
-
-    form {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    input {
-      padding: 10px;
-      font-size: 16px;
-      text-align: center;
-    }
-
-    button {
-      padding: 10px;
-      font-size: 16px;
-      cursor: pointer;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-  </style>
+	<meta charset="UTF-8">
+	<title>Login</title>
+	<link rel="stylesheet" href="/static/css/login.css">
 </head>
 <body>
-  <form method="post" action="/login">
-    <input type="text" name="username" placeholder="Username" required />
-    <input type="password" name="password" placeholder="Password" required />
-    <button type="submit">Login</button>
-  </form>
+	<form method="post" action="/login" class="form">
+		<input type="text" name="username" placeholder="Username" required class="input" />
+		<input type="password" name="password" placeholder="Password" required class="input" />
+		<button type="submit" class="button">Login</button>
+	</form>
 </body>
 </html>

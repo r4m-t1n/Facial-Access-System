@@ -30,7 +30,9 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(
+        "login.html", {"request": request}
+    )
 
 @app.post("/login")
 def login(username: str = Form(...), password: str = Form(...)):
@@ -41,21 +43,25 @@ def login(username: str = Form(...), password: str = Form(...)):
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request):
     members = get_members()
-    return templates.TemplateResponse("dashboard.html", {"request": request, "members": members})
+    return templates.TemplateResponse(
+        "dashboard.html", {"request": request, "members": members}
+    )
 
 @app.post("/add-member")
 async def add_member_api(request: Request, payload: dict = Body(...)):
     new_member = payload.get("new_member")
 
     if not new_member:
-        return JSONResponse(content={"status": "error", "message": "No member provided"}, status_code=400)
+        return JSONResponse(content={"status": "error"}, status_code=400)
 
     members = get_members()
     if new_member in members:
-        return JSONResponse(content={"status": "error", "message": "Member already exists"}, status_code=400)
+        return JSONResponse(content={"status": "error"}, status_code=400)
 
-    members.append(new_member)
-    with open('../members.json', 'w') as file:
-        json.dump(members, file, indent=4)
+    add_member(new_member)
+    
+    os.makedirs(
+        os.path.join("..", "data", "members_data", new_member), exist_ok=True
+    )
 
     return JSONResponse(content={"status": "success"}, status_code=200)

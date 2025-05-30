@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             document.getElementById('new_member_name').value = '';
         } else {
-            alert("Failed to add member.");
+            alert("Failed to add member.\nThis member may already exist.");
         }
     });
 });

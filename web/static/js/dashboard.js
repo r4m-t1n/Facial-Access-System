@@ -50,3 +50,67 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+document.querySelectorAll('.upload-form').forEach(form => {
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const member = form.dataset.member;
+        const input = form.querySelector('input[type="file"]');
+
+        if (!input.files.length) {
+            alert("Please select at least one file.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('member', member);
+
+        for (const file of input.files) {
+            formData.append('photos', file);
+        }
+
+        const response = await fetch('/upload-photo', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.status === "success") {
+                window.location.href = "/";
+            }
+            } else {
+                alert("Upload failed");
+            }
+
+        return false;
+    });
+});
+
+document.querySelectorAll('.delete-form').forEach(form => {
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const member = form.dataset.member;
+        if (!confirm(`Are you sure you want to delete "${member}"?`)) return;
+
+        const formData = new FormData();
+        formData.append('member', member);
+
+        const response = await fetch('/delete-member', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.status === "success") {
+                window.location.href = "/";
+            }
+            } else {
+                alert("Upload failed");
+            }
+
+        return false;
+    });
+});

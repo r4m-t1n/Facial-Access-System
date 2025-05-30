@@ -21,8 +21,8 @@
                 <input type="hidden" name="member" value="{{ member }}">
                 <button type="submit">Delete Member</button>
             </form>
-            <form method="post" action="/upload-photo" enctype="multipart/form-data">
-                <input type="hidden" name="member" value="{{ member }}">
+            <form method="post" action="/upload-photo" enctype="multipart/form-data"
+                class="upload-form" data-member="{{ member }}">
                 <input type="file" name="photos" accept="image/*" multiple required>
                 <button type="submit">Upload Photo</button>
             </form>

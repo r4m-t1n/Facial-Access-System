@@ -3,6 +3,11 @@
 <head>
     <title>Family Dashboard</title>
     <link rel="stylesheet" href="/static/css/dashboard.css">
+    <script>
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+    </script>
 </head>
 <body>
     <div class="sidebar" id="sidebar">
@@ -17,19 +22,20 @@
         {% for member in members %}
         <div id="tab-{{ member }}" class="tab-content">
             <h2>{{ member }}</h2>
-            <form method="post" action="/delete-member">
+            <form method="post" action="/delete-member" onsubmit="return confirm('Are you sure you want to delete {{ member }}?')">
                 <input type="hidden" name="member" value="{{ member }}">
                 <button type="submit">Delete Member</button>
             </form>
-            <form method="post" action="/upload-photo" enctype="multipart/form-data"
-                class="upload-form" data-member="{{ member }}">
+            <form method="post" action="/upload-photo" enctype="multipart/form-data" id="upload-form-{{ member }}">
+                <input type="hidden" name="member" value="{{ member }}">
                 <input type="file" name="photos" accept="image/*" multiple required>
                 <button type="submit">Upload Photo</button>
             </form>
+            <div id="photos-{{ member }}"></div>
         </div>
         {% endfor %}
 
-        <div id="tab-add" class="tab-content">
+        <div id="tab-add" class="tab-content active">
             <h2>Add New Member</h2>
             <form id="add-member-form">
                 <input type="text" id="new_member_name" placeholder="Enter name" required>
@@ -41,12 +47,16 @@
     <script src="/static/js/dashboard.js"></script>
 
     <script>
-        if (window.members && window.members.length > 0) {
-            showTab(window.members[0]);
+        const members = {{ members|tojson }};
+        if (members && members.length > 0) {
+            showTab(members[0]);
         } else {
             showTab('add');
         }
-    </script>
 
+        {% if alert %}
+        alert("{{ alert }}");
+        {% endif %}
+    </script>
 </body>
 </html>

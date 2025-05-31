@@ -40,14 +40,16 @@ def login(username: str = Form(...), password: str = Form(...)):
     return RedirectResponse("/", status_code=302)
 
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request):
+def show_dashboard(request: Request, alert: str = None):
     members = get_members()
-    return templates.TemplateResponse(
-        "dashboard.html", {"request": request, "members": members}
-    )
+    return templates.TemplateResponse("dashboard.html", {
+        "request": request,
+        "members": members,
+        "alert": alert
+    })
 
 @app.post("/add-member")
-async def add_member_api(request: Request, payload: dict = Body(...)):
+async def add_member_api(payload: dict = Body(...)):
     new_member = payload.get("new_member")
 
     if not new_member:
@@ -97,11 +99,15 @@ async def upload_photos(
 
         count += 1
 
-    return RedirectResponse(url="/dashboard", status_code=303)
+    return RedirectResponse(
+        url="/dashboard?alert=Upload+successful!", status_code=303
+    ) #I'm still learning web stuff, I know it's not proffesional, I will complete it later :)
 
 
 @app.post("/delete-member")
-async def delete_member(member: str = Form(...)):
+async def delete_member(
+    member: str = Form(...)
+    ):
     dir_name = os.path.join("..", "data", "members_data", member)
 
     members = get_members()
@@ -112,4 +118,6 @@ async def delete_member(member: str = Form(...)):
     if os.path.exists(dir_name):
         shutil.rmtree(dir_name)
 
-    return RedirectResponse(url="/dashboard", status_code=303)
+    return RedirectResponse(
+        url=f"/dashboard?alert=Member+{member}+deleted+successfully!", status_code=303
+    ) #I'm still learning web stuff, I know it's not proffesional, I will complete it later :)

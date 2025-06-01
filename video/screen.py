@@ -1,15 +1,16 @@
 import cv2
 
 
-async def detect_faces():
+async def get_webcam_frames():
     capture = cv2.VideoCapture(0)
 
-    while True:
-        ret, frame = capture.read()
+    try:
+        while True:
+            ret, frame = capture.read()
 
-        if not ret:
-            break
-        
-        yield frame
+            if not ret:
+                break
 
-    capture.release()
+            yield frame
+    finally:
+        capture.release()

@@ -4,23 +4,6 @@ function showTab(id) {
     if (tab) tab.classList.add('active');
 }
 
-async function loadPhotos(member) {
-    try {
-        const response = await fetch(`/get-photos?member=${encodeURIComponent(member)}`);
-        if (response.ok) {
-            const photos = await response.json();
-            const container = document.getElementById(`photos-${member}`);
-            if (container) {
-                container.innerHTML = photos.map(photo => 
-                    `<img src="/photos/${member}/${photo}" alt="${photo}" style="max-width: 200px; margin: 5px;">`
-                ).join('');
-            }
-        }
-    } catch (error) {
-        console.error('Error loading photos:', error);
-    }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('add-member-form');
     form.addEventListener('submit', async function(e) {
@@ -37,12 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ new_member: name })
             });
 
+            const result = await response.json();
+            
             if (response.ok) {
                 const btn = document.createElement('button');
                 btn.textContent = name;
                 btn.onclick = () => {
                     showTab(name);
-                    loadPhotos(name);
                 };
                 document.getElementById('sidebar').insertBefore(btn, document.querySelector('#sidebar hr'));
 
@@ -51,14 +35,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 div.className = 'tab-content';
                 div.innerHTML = `
                     <h2>${name}</h2>
-                    <form method="post" action="/delete-member" onsubmit="return confirm('Are you sure you want to delete ${name}?')">
-                        <input type="hidden" name="member" value="${name}">
-                        <button type="submit">Delete Member</button>
-                    </form>
-                    <form method="post" action="/upload-photo" enctype="multipart/form-data" id="upload-form-${name}">
-                        <input type="hidden" name="member" value="${name}">
+                    <button onclick="deleteMember('${name}')">Delete Member</button>
+                    <form id="upload-form-${name}" enctype="multipart/form-data">
                         <input type="file" name="photos" accept="image/*" multiple required>
-                        <button type="submit">Upload Photo</button>
+                        <button type="button" onclick="uploadPhotos('${name}')">Upload Photo</button>
                     </form>
                     <div id="photos-${name}"></div>
                 `;
@@ -66,47 +46,62 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 showTab(name);
                 document.getElementById('new_member_name').value = '';
-
-                loadPhotos(name);
+                
+                alert(result.message || 'Member added successfully!');
             } else {
-                const error = await response.text();
-                alert(`Failed to add member: ${error}`);
+                alert(result.message || 'Failed to add member', 'error');
             }
         } catch (error) {
-            alert(`Error: ${error.message}`);
+            alert(`Error: ${error.message}`, 'error');
         }
     });
-
-    const activeTab = document.querySelector('.tab-content.active');
-    if (activeTab && activeTab.id !== 'tab-add') {
-        const member = activeTab.id.replace('tab-', '');
-        loadPhotos(member);
-    }
-
-    document.querySelectorAll('form[action="/upload-photo"]').forEach(form => {
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const member = formData.get('member');
-            
-            try {
-                const response = await fetch('/upload-photo', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (response.ok) {
-                    alert('Photos uploaded successfully!');
-                    loadPhotos(member);
-                } else {
-                    const error = await response.text();
-                    alert(`Upload failed: ${error}`);
-                }
-            } catch (error) {
-                alert(`Error: ${error.message}`);
-            }
-        });
-    });
 });
+
+async function uploadPhotos(member) {
+    const form = document.getElementById(`upload-form-${member}`);
+    const formData = new FormData(form);
+    formData.append('member', member);
+
+    try {
+        const response = await fetch('/upload-photo', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert('Files uploaded successfully!');
+        } else {
+            console.error('Upload failed:', result.message);
+        }
+    } catch (error) {
+        console.error('Error:', error.message);
+    }
+}
+
+async function deleteMember(member) {
+    if (!confirm(`Are you sure you want to delete ${member}?`)) return;
+
+    try {
+        const response = await fetch('/delete-member', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `member=${encodeURIComponent(member)}`
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            location.reload()
+        } else {
+            console.error('Failed to delete member:', result.message);
+        }
+    } catch (error) {
+        console.error('Error:', error.message);
+    }
+}
 
 window.history.replaceState({}, document.title, "/dashboard");

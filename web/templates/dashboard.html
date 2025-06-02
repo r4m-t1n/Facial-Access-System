@@ -22,14 +22,11 @@
         {% for member in members %}
         <div id="tab-{{ member }}" class="tab-content">
             <h2>{{ member }}</h2>
-            <form method="post" action="/delete-member" onsubmit="return confirm('Are you sure you want to delete {{ member }}?')">
-                <input type="hidden" name="member" value="{{ member }}">
-                <button type="submit">Delete Member</button>
-            </form>
-            <form method="post" action="/upload-photo" enctype="multipart/form-data" id="upload-form-{{ member }}">
+            <button type="button" onclick="deleteMember('{{ member }}')">Delete Member</button>
+            <form method="post" enctype="multipart/form-data" id="upload-form-{{ member }}">
                 <input type="hidden" name="member" value="{{ member }}">
                 <input type="file" name="photos" accept="image/*" multiple required>
-                <button type="submit">Upload Photo</button>
+                <button type="button" onclick="uploadPhotos('{{ member }}')">Upload Photo</button>
             </form>
             <div id="photos-{{ member }}"></div>
         </div>

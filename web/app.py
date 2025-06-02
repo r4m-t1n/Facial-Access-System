@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 from typing import List
 import json
@@ -6,8 +7,12 @@ from fastapi import FastAPI, Request, Form, Body, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from dotenv import load_dotenv
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from model.trainer import train_member, remove_member
+
+from dotenv import load_dotenv
 load_dotenv()
 
 USERNAME = os.environ.get("LOGIN_USERNAME", "admin")
@@ -82,7 +87,9 @@ async def upload_photos(
         name, ext = os.path.splitext(file)
         if name.isdigit():
             numbers.append(int(name))
+
     count = max(numbers) + 1 if numbers else 1
+    files = []
 
     for photo in photos:
         contents = await photo.read()
@@ -94,30 +101,40 @@ async def upload_photos(
             continue
 
         filename = os.path.join(dir_name, f"{count}{ext}")
+        files.append(filename)
+
         with open(filename, "wb") as f:
             f.write(contents)
 
         count += 1
 
-    return RedirectResponse(
-        url="/dashboard?alert=Upload+successful!", status_code=303
-    ) #I'm still learning web stuff, I know it's not proffesional, I will complete it later :)
+    result = train_member(member, files)
+
+    return JSONResponse(
+        content={
+            "status": "success",
+            "message": ("But following photos didn't contain any face:" +
+            "\n".join(result)) if result else ""
+        },
+        status_code=200
+    )
 
 
 @app.post("/delete-member")
-async def delete_member(
-    member: str = Form(...)
-    ):
+async def delete_member(member: str = Form(...)):
     dir_name = os.path.join("..", "data", "members_data", member)
 
     members = get_members()
     if member in members:
         members.remove(member)
         write_members(members)
-    
+
+    remove_member(member)
+
     if os.path.exists(dir_name):
         shutil.rmtree(dir_name)
 
-    return RedirectResponse(
-        url=f"/dashboard?alert=Member+{member}+deleted+successfully!", status_code=303
-    ) #I'm still learning web stuff, I know it's not proffesional, I will complete it later :)
+    return JSONResponse(
+        content={"status": "success"},
+        status_code=200
+    )

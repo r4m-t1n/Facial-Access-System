@@ -9,28 +9,82 @@ body {
     background-color: #f4f4f4;
     padding-top: 20px;
     box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 .sidebar button {
     display: block;
-    width: 100%;
-    padding: 12px;
+    width: calc(100% - 20px);
+    padding: 12px 10px;
+    margin: 0 10px;
     border: none;
     background: none;
     text-align: left;
     cursor: pointer;
     font-size: 16px;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid #eee;
+    border-radius: 5px;
 }
 .sidebar button:hover {
-    background-color: #ddd;
+    background-color: #e0e0e0;
+}
+.sidebar hr {
+    width: calc(100% - 20px);
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 10px 10px;
 }
 .main {
     flex-grow: 1;
     padding: 20px;
+    background-color: #fff;
+    overflow-y: auto;
 }
-.tab-content {
+.main-tab-content {
     display: none;
 }
-.tab-content.active {
+.main-tab-content.active {
     display: block;
+}
+
+.sub-tab-content {
+    display: none;
+}
+.sub-tab-content.active {
+    display: block;
+}
+
+form {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+form input[type="text"],
+form input[type="file"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+form button[type="submit"],
+form button[type="button"],
+.main button {
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 10px;
+}
+form button[type="submit"]:hover,
+form button[type="button"]:hover,
+.main button:hover {
+    background-color: #0056b3;
 }

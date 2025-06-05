@@ -11,33 +11,32 @@
 </head>
 <body>
     <div class="sidebar" id="sidebar">
+        <button onclick="openLiveCamera()">Live</button>
+        <button onclick="showMainTab('members')">Members</button> <hr>
         {% for member in members %}
-        <button onclick="showTab('{{ member }}')">{{ member }}</button>
-        {% endfor %}
+        <button onclick="showMemberSubTab('{{ member }}')">{{ member }}</button> {% endfor %}
         <hr>
-        <button onclick="showTab('add')">+ Add Member</button>
-    </div>
+        <button onclick="showMemberSubTab('add')">+ Add Member</button> </div>
 
     <div class="main" id="main">
-        {% for member in members %}
-        <div id="tab-{{ member }}" class="tab-content">
-            <h2>{{ member }}</h2>
-            <button type="button" onclick="deleteMember('{{ member }}')">Delete Member</button>
-            <form method="post" enctype="multipart/form-data" id="upload-form-{{ member }}">
-                <input type="hidden" name="member" value="{{ member }}">
-                <input type="file" name="photos" accept="image/*" multiple required>
-                <button type="button" onclick="uploadPhotos('{{ member }}')">Upload Photo</button>
-            </form>
-            <div id="photos-{{ member }}"></div>
-        </div>
-        {% endfor %}
+        <div id="main-tab-members" class="main-tab-content"> {% for member in members %}
+            <div id="sub-tab-{{ member }}" class="sub-tab-content"> <h2>{{ member }}</h2>
+                <button type="button" onclick="deleteMember('{{ member }}')">Delete Member</button>
+                <form method="post" enctype="multipart/form-data" id="upload-form-{{ member }}">
+                    <input type="hidden" name="member" value="{{ member }}">
+                    <input type="file" name="photos" accept="image/*" multiple required>
+                    <button type="button" onclick="uploadPhotos('{{ member }}')">Upload Photo</button>
+                </form>
+                <div id="photos-{{ member }}"></div>
+            </div>
+            {% endfor %}
 
-        <div id="tab-add" class="tab-content active">
-            <h2>Add New Member</h2>
-            <form id="add-member-form">
-                <input type="text" id="new_member_name" placeholder="Enter name" required>
-                <button type="submit">Add</button>
-            </form>
+            <div id="sub-tab-add" class="sub-tab-content"> <h2>Add New Member</h2>
+                <form id="add-member-form">
+                    <input type="text" id="new_member_name" placeholder="Enter name" required>
+                    <button type="submit">Add</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -45,11 +44,24 @@
 
     <script>
         const members = {{ members|tojson }};
-        if (members && members.length > 0) {
-            showTab(members[0]);
-        } else {
-            showTab('add');
-        }
+        const activeTab = "{{ active_tab }}"; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showMainTab(activeTab);
+
+            if (activeTab === 'members') {
+                const urlParams = new URLSearchParams(window.location.search);
+                const subTabFromUrl = urlParams.get('subtab');
+
+                if (subTabFromUrl && document.getElementById(`sub-tab-${subTabFromUrl}`)) {
+                    showMemberSubTab(subTabFromUrl);
+                } else if (members && members.length > 0) {
+                    showMemberSubTab(members[0]);
+                } else {
+                    showMemberSubTab('add');
+                }
+            }
+        });
 
         {% if alert %}
         alert("{{ alert }}");

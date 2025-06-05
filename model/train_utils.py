@@ -1,20 +1,37 @@
 import os
+import sys
 import pickle
+import json
+import subprocess
+import threading
 
-import face_recognition
 
 ENCODING_FILE = os.path.join(os.path.dirname(__file__), "face_encodings.pickle")
 
+encodings_file_lock = threading.Lock()
+
 def get_encodings(filename = ENCODING_FILE):
-    if not os.path.isfile(filename):
-        return {}
-    
-    with open(filename, "rb") as f:
-        return pickle.load(f)
+    with encodings_file_lock:
+        if not os.path.isfile(filename):
+            return {}
+        
+        with open(filename, "rb") as f:
+            return pickle.load(f)
+
+def get_face_encodings():
+    encodings_dict = get_encodings()
+    face_encodings = []
+    face_names = []
+
+    for name, encodings in encodings_dict.items():
+        face_encodings.extend(encodings)
+        face_names.extend([name] * len(encodings))
+    return face_encodings, face_names
 
 def write_encoding(encodings: dict):
-    with open(ENCODING_FILE, "wb") as f:
-        pickle.dump(encodings, f)
+    with encodings_file_lock:
+        with open(ENCODING_FILE, "wb") as f:
+            pickle.dump(encodings, f)
 
 def remove_member(member: str):
     encodings = get_encodings()
@@ -26,24 +43,19 @@ def remove_member(member: str):
     write_encoding(encodings)
 
 
-def train_member(member: str, photos: list):
-    not_detected = []
+def retrain_model(member, photos):
+    path = os.path.join(os.path.dirname(__file__), "train_model.py")
 
-    encodings_dict = get_encodings()
-    
-    if member not in encodings_dict:
-        encodings_dict[member] = []
+    result = subprocess.run(
+        [sys.executable, path, member] + photos,
+        capture_output=True,
+        text=True
+    )
 
-    for img_path in photos:
-        img = face_recognition.load_image_file(img_path)
+    if result.returncode == 0:
+        not_detected = json.loads(result.stdout)
+    else:
+        print("Error:", result.stderr)
 
-        face_encodings = face_recognition.face_encodings(img)
-
-        if len(face_encodings) > 0:
-            encodings_dict[member].append(face_encodings[0])
-        else:
-            not_detected.append(os.path.basename(img_path))
-    
-    write_encoding(encodings_dict)
 
     return not_detected

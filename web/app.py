@@ -4,13 +4,16 @@ import shutil
 from typing import List
 import json
 from fastapi import FastAPI, Request, Form, Body, File, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from model.trainer import train_member, remove_member
+from model.train_utils import remove_member, retrain_model
+from video.screen import get_frame_bytes
+from video.camera_manager import camera_manager
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -19,18 +22,33 @@ USERNAME = os.environ.get("LOGIN_USERNAME", "admin")
 PASSWORD = os.environ.get("LOGIN_PASSWORD", "1234")
 
 def get_members():
-    with open('../data/members.json') as file:
-        data = json.load(file)
-
-    return data
+    try:
+        with open('../data/members.json') as file:
+            data = json.load(file)
+        return data
+    except FileNotFoundError:
+        with open('../data/members.json', 'w') as file:
+            json.dump([], file)
+        return []
 
 def write_members(members: List):
     with open('../data/members.json', 'w') as file:
         json.dump(members, file, indent=4)
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("FastAPI app startup initiated. Starting CameraManager...")
+    camera_manager.start()
+    print("FastAPI app startup completed.")
+    yield
+    print("FastAPI app shutdown initiated. Stopping CameraManager...")
+    camera_manager.stop()
+    print("FastAPI app shutdown completed.")
+
+app = FastAPI(lifespan=lifespan) 
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 @app.get("/", response_class=HTMLResponse)
 def login_page(request: Request):
@@ -45,12 +63,13 @@ def login(username: str = Form(...), password: str = Form(...)):
     return RedirectResponse("/", status_code=302)
 
 @app.get("/dashboard", response_class=HTMLResponse)
-def show_dashboard(request: Request, alert: str = None):
+def show_dashboard(request: Request, alert: str = None, tab: str = "members"):
     members = get_members()
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "members": members,
-        "alert": alert
+        "alert": alert,
+        "active_tab": tab 
     })
 
 @app.post("/add-member")
@@ -58,20 +77,19 @@ async def add_member_api(payload: dict = Body(...)):
     new_member = payload.get("new_member")
 
     if not new_member:
-        return JSONResponse(content={"status": "error"}, status_code=400)
+        return JSONResponse(content={"status": "error", "message": "Member name cannot be empty."}, status_code=400)
 
     members = get_members()
     if new_member in members:
-        return JSONResponse(content={"status": "error"}, status_code=400)
+        return JSONResponse(content={"status": "error", "message": "Member already exists."}, status_code=400)
 
     members.append(new_member)
     write_members(members)
     
-    os.makedirs(
-        os.path.join("..", "data", "members_data", new_member), exist_ok=True
-    )
+    member_data_path = os.path.join("..", "data", "members_data", new_member)
+    os.makedirs(member_data_path, exist_ok=True)
 
-    return JSONResponse(content={"status": "success"}, status_code=200)
+    return JSONResponse(content={"status": "success", "message": "Member added successfully!"}, status_code=200)
 
 @app.post("/upload-photo")
 async def upload_photos(
@@ -89,7 +107,7 @@ async def upload_photos(
             numbers.append(int(name))
 
     count = max(numbers) + 1 if numbers else 1
-    files = []
+    files_to_train = [] 
 
     for photo in photos:
         contents = await photo.read()
@@ -97,24 +115,25 @@ async def upload_photos(
             continue
 
         _, ext = os.path.splitext(photo.filename)
-        if not ext:
+        if not ext or ext.lower() not in ['.jpg', '.jpeg', '.png', '.bmp']:
             continue
 
         filename = os.path.join(dir_name, f"{count}{ext}")
-        files.append(filename)
+        files_to_train.append(filename) 
 
         with open(filename, "wb") as f:
             f.write(contents)
 
         count += 1
 
-    result = train_member(member, files)
+    retrain_model(member, files_to_train)
+
+    camera_manager.reload_face_encodings()
 
     return JSONResponse(
         content={
             "status": "success",
-            "message": ("But following photos didn't contain any face:" +
-            "\n".join(result)) if result else ""
+            "message": "Files uploaded successfully!"
         },
         status_code=200
     )
@@ -129,12 +148,22 @@ async def delete_member(member: str = Form(...)):
         members.remove(member)
         write_members(members)
 
-    remove_member(member)
+    remove_member(member) 
 
     if os.path.exists(dir_name):
         shutil.rmtree(dir_name)
 
+    camera_manager.reload_face_encodings()
+
     return JSONResponse(
-        content={"status": "success"},
+        content={"status": "success", "message": "Member deleted successfully!"},
         status_code=200
     )
+
+@app.get("/live-camera", response_class=HTMLResponse)
+async def live_camera_page(request: Request):
+    return templates.TemplateResponse("live-camera.html", {"request": request})
+
+@app.get("/video")
+async def video():
+    return StreamingResponse(get_frame_bytes(), media_type="multipart/x-mixed-replace; boundary=frame")

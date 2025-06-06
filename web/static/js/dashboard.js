@@ -96,10 +96,15 @@ document.addEventListener('DOMContentLoaded', () => {
 async function uploadPhotos(member) {
     const form = document.getElementById(`upload-form-${member}`);
     const filesInput = form.querySelector('input[type="file"]');
+    const uploadButton = form.querySelector('button[type="button"]');
+
     if (!filesInput || !filesInput.files.length) {
         alert('Please select files to upload.');
         return;
     }
+
+    uploadButton.disabled = true;
+    uploadButton.textContent = 'Uploading...';
 
     const formData = new FormData(form);
     formData.append('member', member);
@@ -120,6 +125,9 @@ async function uploadPhotos(member) {
         }
     } catch (error) {
         alert(`Error during upload: ${error.message}`);
+    } finally {
+        uploadButton.disabled = false;
+        uploadButton.textContent = 'Upload Photo';
     }
 }
 

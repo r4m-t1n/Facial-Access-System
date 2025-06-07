@@ -1,10 +1,11 @@
+import os
+import sys
 import cv2
 import threading
 import time
+from datetime import date, datetime
 import numpy as np
 import face_recognition
-import os
-import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) 
 from model.train_utils import get_face_encodings
@@ -13,21 +14,41 @@ class CameraManager:
     _instance = None
     _lock = threading.Lock()
     
-    _capture: cv2.VideoCapture = None
-    _is_running: bool = False
-    _thread: threading.Thread = None
-
-    _current_frame_bytes: bytes = b''
-    _frame_lock = threading.Lock()
-
-    _known_face_encodings = []
-    _known_face_names = []
-
     def __new__(cls):
         with cls._lock:
             if cls._instance is None:
                 cls._instance = super(CameraManager, cls).__new__(cls)
+                cls._instance.__init__()
             return cls._instance
+
+    def __init__(self):
+        self._capture: cv2.VideoCapture = None
+        self._is_running: bool = False
+
+        self._thread: threading.Thread = None
+
+        self._current_frame_bytes: bytes = b''
+        self._frame_lock = threading.Lock()
+
+        self._known_face_encodings = []
+        self._known_face_names = []
+
+        self._log_file_path = None
+        self._current_log_date = None
+
+    def _update_log_path(self):
+        today_date = date.today()
+        if today_date != self._current_log_date:
+            self._current_log_date = today_date
+
+            root_pth = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+            log_path = os.path.join(root_pth, 'data', 'logs')
+            os.makedirs(log_path, exist_ok=True)
+
+            today_filename = self._current_log_date.strftime("%d_%m_%Y.txt")
+            self._log_file_path = os.path.join(log_path, today_filename)
+
+            print(f"[CameraManager] Logging to new file: {self._log_file_path}")
 
     def _load_face_encodings(self):
         try:
@@ -36,6 +57,18 @@ class CameraManager:
             print(f"[CameraManager] ERROR: Failed to load face encodings: {e}")
             self._known_face_encodings = []
             self._known_face_names = []
+
+    def _write_log(self, name):
+        self._update_log_path()
+
+        now_timestamp = datetime.now().strftime("%H:%M:%S")
+        log_text = f"[{now_timestamp}] Detected: {name}\n"
+        
+        try:
+            with open(self._log_file_path, 'a', encoding='utf-8') as f:
+                f.write(log_text)
+        except Exception as e:
+            print(f"[CameraManager] ERROR: Failed to write to log file: {e}")
 
     def _camera_loop(self):
         self._capture = cv2.VideoCapture(0)
@@ -77,7 +110,9 @@ class CameraManager:
                                 name = self._known_face_names[best_match_index]
 
                     face_names.append(name)
-                    
+
+                    self._write_log(name)
+
                 for (top, right, bottom, left), name in zip(face_locations, face_names):
 
                     top *= 4

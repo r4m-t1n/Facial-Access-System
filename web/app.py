@@ -12,8 +12,8 @@ from contextlib import asynccontextmanager
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from model.train_utils import remove_member, retrain_model
-from video.screen import get_frame_bytes
-from video.camera_manager import camera_manager
+from camera.screen import get_frame_bytes
+from camera.camera_manager import camera_manager
 
 from dotenv import load_dotenv
 load_dotenv()

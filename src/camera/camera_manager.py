@@ -1,5 +1,4 @@
 import os
-import sys
 import cv2
 import threading
 import time
@@ -7,8 +6,10 @@ from datetime import date, datetime
 import numpy as np
 import face_recognition
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) 
-from model.train_utils import get_face_encodings
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(os.path.dirname(CURRENT_DIR))
+
+from model import get_face_encodings
 
 class CameraManager:
     _instance = None
@@ -41,8 +42,7 @@ class CameraManager:
         if today_date != self._current_log_date:
             self._current_log_date = today_date
 
-            root_pth = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-            log_path = os.path.join(root_pth, 'data', 'logs')
+            log_path = os.path.join(ROOT_DIR, 'logs')
             os.makedirs(log_path, exist_ok=True)
 
             today_filename = self._current_log_date.strftime("%d_%m_%Y.txt")

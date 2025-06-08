@@ -5,8 +5,10 @@ import json
 import subprocess
 import threading
 
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(os.path.dirname(CURRENT_DIR))
 
-ENCODING_FILE = os.path.join(os.path.dirname(__file__), "face_encodings.pickle")
+ENCODING_FILE = os.path.join(ROOT_DIR, 'data', 'face_encodings.pickle')
 
 encodings_file_lock = threading.Lock()
 
@@ -14,7 +16,7 @@ def get_encodings(filename = ENCODING_FILE):
     with encodings_file_lock:
         if not os.path.isfile(filename):
             return {}
-        
+
         with open(filename, "rb") as f:
             return pickle.load(f)
 

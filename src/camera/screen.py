@@ -1,5 +1,5 @@
 import asyncio
-from camera.camera_manager import camera_manager
+from camera import camera_manager
 
 async def get_frame_bytes():
 

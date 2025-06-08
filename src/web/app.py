@@ -11,28 +11,34 @@ from contextlib import asynccontextmanager
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from model.train_utils import remove_member, retrain_model
-from camera.screen import get_frame_bytes
-from camera.camera_manager import camera_manager
+from model import remove_member, retrain_model
+from camera import camera_manager, get_frame_bytes
 
 from dotenv import load_dotenv
 load_dotenv()
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(os.path.dirname(CURRENT_DIR))
+
+DATA_DIR = os.path.join(ROOT_DIR, 'data')
+MEMBERS_JSON_PATH = os.path.join(DATA_DIR, 'members.json')
+MEMBERS_DATA_PATH = os.path.join(DATA_DIR, 'members_data')
 
 USERNAME = os.environ.get("LOGIN_USERNAME", "admin")
 PASSWORD = os.environ.get("LOGIN_PASSWORD", "1234")
 
 def get_members():
     try:
-        with open('../data/members.json') as file:
+        with open(MEMBERS_JSON_PATH, 'r') as file:
             data = json.load(file)
         return data
     except FileNotFoundError:
-        with open('../data/members.json', 'w') as file:
+        with open(MEMBERS_JSON_PATH, 'w') as file:
             json.dump([], file)
         return []
 
 def write_members(members: List):
-    with open('../data/members.json', 'w') as file:
+    with open(MEMBERS_JSON_PATH, 'w') as file:
         json.dump(members, file, indent=4)
 
 @asynccontextmanager
@@ -86,7 +92,7 @@ async def add_member_api(payload: dict = Body(...)):
     members.append(new_member)
     write_members(members)
     
-    member_data_path = os.path.join("..", "data", "members_data", new_member)
+    member_data_path = os.path.join(MEMBERS_DATA_PATH, new_member)
     os.makedirs(member_data_path, exist_ok=True)
 
     return JSONResponse(content={"status": "success", "message": "Member added successfully!"}, status_code=200)
@@ -96,7 +102,7 @@ async def upload_photos(
     member: str = Form(...),
     photos: List[UploadFile] = File(...)
 ):
-    dir_name = os.path.join("..", "data", "members_data", member)
+    dir_name = os.path.join(MEMBERS_DATA_PATH, member)
     os.makedirs(dir_name, exist_ok=True)
 
     dir_files = os.listdir(dir_name)
@@ -141,7 +147,7 @@ async def upload_photos(
 
 @app.post("/delete-member")
 async def delete_member(member: str = Form(...)):
-    dir_name = os.path.join("..", "data", "members_data", member)
+    dir_name = os.path.join(MEMBERS_DATA_PATH, member)
 
     members = get_members()
     if member in members:

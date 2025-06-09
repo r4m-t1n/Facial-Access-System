@@ -51,22 +51,22 @@ async def lifespan(app: FastAPI):
     camera_manager.stop()
     print("FastAPI app shutdown completed.")
 
-app = FastAPI(lifespan=lifespan) 
+app = FastAPI(lifespan=lifespan)
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/", response_class=HTMLResponse)
-def login_page(request: Request):
+def login_page(request: Request, error: str = None):
     return templates.TemplateResponse(
-        "login.html", {"request": request}
+        "login.html", {"request": request, "error": error}
     )
 
 @app.post("/login")
 def login(username: str = Form(...), password: str = Form(...)):
     if username == USERNAME and password == PASSWORD:
         return RedirectResponse("/dashboard", status_code=302)
-    return RedirectResponse("/", status_code=302)
+    return RedirectResponse("/?error=1", status_code=302)
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def show_dashboard(request: Request, alert: str = None, tab: str = "members"):
@@ -75,7 +75,7 @@ def show_dashboard(request: Request, alert: str = None, tab: str = "members"):
         "request": request,
         "members": members,
         "alert": alert,
-        "active_tab": tab 
+        "active_tab": tab
     })
 
 @app.post("/add-member")
@@ -91,7 +91,7 @@ async def add_member_api(payload: dict = Body(...)):
 
     members.append(new_member)
     write_members(members)
-    
+
     member_data_path = os.path.join(MEMBERS_DATA_PATH, new_member)
     os.makedirs(member_data_path, exist_ok=True)
 
@@ -113,7 +113,7 @@ async def upload_photos(
             numbers.append(int(name))
 
     count = max(numbers) + 1 if numbers else 1
-    files_to_train = [] 
+    files_to_train = []
 
     for photo in photos:
         contents = await photo.read()
@@ -125,7 +125,7 @@ async def upload_photos(
             continue
 
         filename = os.path.join(dir_name, f"{count}{ext}")
-        files_to_train.append(filename) 
+        files_to_train.append(filename)
 
         with open(filename, "wb") as f:
             f.write(contents)
@@ -154,7 +154,7 @@ async def delete_member(member: str = Form(...)):
         members.remove(member)
         write_members(members)
 
-    remove_member(member) 
+    remove_member(member)
 
     if os.path.exists(dir_name):
         shutil.rmtree(dir_name)

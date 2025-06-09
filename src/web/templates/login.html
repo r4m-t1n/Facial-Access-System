@@ -1,15 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<title>Login</title>
-	<link rel="stylesheet" href="/static/css/login.css">
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/css/login.css">
 </head>
 <body>
-	<form method="post" action="/login" class="form">
-		<input type="text" name="username" placeholder="Username" required class="input" />
-		<input type="password" name="password" placeholder="Password" required class="input" />
-		<button type="submit" class="button">Login</button>
-	</form>
+    <div class="login-container">
+        {% if error %}
+        <div class="error-message">
+            Incorrect username or password
+        </div>
+        {% endif %}
+
+        <form method="post" action="/login" class="form">
+            <input type="text" name="username" placeholder="Username" required class="input" />
+            <input type="password" name="password" placeholder="Password" required class="input" />
+            <button type="submit" class="button">Login</button>
+        </form>
+    </div>
+
+    <script>
+        const errorMessage = document.querySelector('.error-message');
+        if (errorMessage) {
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 3000);
+        }
+    </script>
 </body>
 </html>

@@ -88,3 +88,11 @@ form button[type="button"]:hover,
 .main button:hover {
     background-color: #0056b3;
 }
+.sidebar .logout-button {
+    background-color: #dc3545;
+    color: white;
+}
+
+.sidebar .logout-button:hover {
+    background-color: #c82333;
+}

@@ -3,11 +3,12 @@ import sys
 import shutil
 from typing import List
 import json
-from fastapi import FastAPI, Request, Form, Body, File, UploadFile
+from fastapi import FastAPI, Request, Form, Body, File, UploadFile, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+from starlette.middleware.sessions import SessionMiddleware
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -26,6 +27,7 @@ MEMBERS_DATA_PATH = os.path.join(DATA_DIR, 'members_data')
 
 USERNAME = os.environ.get("LOGIN_USERNAME", "admin")
 PASSWORD = os.environ.get("LOGIN_PASSWORD", "1234")
+SECRET_KEY = os.environ.get("SECRET_KEY", "change_this_key_or_be_hacked")
 
 def get_members():
     try:
@@ -52,23 +54,38 @@ async def lifespan(app: FastAPI):
     print("FastAPI app shutdown completed.")
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
+
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+async def check_user_auth(request: Request):
+    if not request.session.get('is_logged_in'):
+        raise HTTPException(status_code=307, detail="Not authenticated", headers={"Location": "/"})
+    return request.session.get("is_logged_in")
 
 @app.get("/", response_class=HTMLResponse)
 def login_page(request: Request, error: str = None):
+    if request.session.get('is_logged_in'):
+        return RedirectResponse("/dashboard", status_code=302)
     return templates.TemplateResponse(
         "login.html", {"request": request, "error": error}
     )
 
 @app.post("/login")
-def login(username: str = Form(...), password: str = Form(...)):
+def login(request: Request, username: str = Form(...), password: str = Form(...)):
     if username == USERNAME and password == PASSWORD:
+        request.session['is_logged_in'] = True
         return RedirectResponse("/dashboard", status_code=302)
     return RedirectResponse("/?error=1", status_code=302)
 
-@app.get("/dashboard", response_class=HTMLResponse)
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/")
+
+@app.get("/dashboard", response_class=HTMLResponse, dependencies=[Depends(check_user_auth)])
 def show_dashboard(request: Request, alert: str = None, tab: str = "members"):
     members = get_members()
     return templates.TemplateResponse("dashboard.html", {
@@ -78,7 +95,7 @@ def show_dashboard(request: Request, alert: str = None, tab: str = "members"):
         "active_tab": tab
     })
 
-@app.post("/add-member")
+@app.post("/add-member", dependencies=[Depends(check_user_auth)])
 async def add_member_api(payload: dict = Body(...)):
     new_member = payload.get("new_member")
 
@@ -97,7 +114,7 @@ async def add_member_api(payload: dict = Body(...)):
 
     return JSONResponse(content={"status": "success", "message": "Member added successfully!"}, status_code=200)
 
-@app.post("/upload-photo")
+@app.post("/upload-photo", dependencies=[Depends(check_user_auth)])
 async def upload_photos(
     member: str = Form(...),
     photos: List[UploadFile] = File(...)
@@ -133,7 +150,6 @@ async def upload_photos(
         count += 1
 
     retrain_model(member, files_to_train)
-
     camera_manager.reload_face_encodings()
 
     return JSONResponse(
@@ -144,8 +160,7 @@ async def upload_photos(
         status_code=200
     )
 
-
-@app.post("/delete-member")
+@app.post("/delete-member", dependencies=[Depends(check_user_auth)])
 async def delete_member(member: str = Form(...)):
     dir_name = os.path.join(MEMBERS_DATA_PATH, member)
 
@@ -166,10 +181,10 @@ async def delete_member(member: str = Form(...)):
         status_code=200
     )
 
-@app.get("/live-camera", response_class=HTMLResponse)
+@app.get("/live-camera", response_class=HTMLResponse, dependencies=[Depends(check_user_auth)])
 async def live_camera_page(request: Request):
     return templates.TemplateResponse("live-camera.html", {"request": request})
 
-@app.get("/video")
+@app.get("/video", dependencies=[Depends(check_user_auth)])
 async def video():
     return StreamingResponse(get_frame_bytes(), media_type="multipart/x-mixed-replace; boundary=frame")

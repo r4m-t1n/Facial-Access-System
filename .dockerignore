@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+
+data/
+members_data/
+members.json
+
+*.pickle
+
+logs/

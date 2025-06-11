@@ -18,11 +18,13 @@ class CameraManager:
     def __new__(cls):
         with cls._lock:
             if cls._instance is None:
-                cls._instance = super(CameraManager, cls).__new__(cls)
-                cls._instance.__init__()
+                cls._instance = super().__new__(cls)
             return cls._instance
 
     def __init__(self):
+        if hasattr(self, "_initialized"):
+            return None
+
         self._capture: cv2.VideoCapture = None
         self._is_running: bool = False
 

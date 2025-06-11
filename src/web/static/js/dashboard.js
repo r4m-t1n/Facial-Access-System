@@ -44,6 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({ new_member: name })
                 });
 
+                const result = await response.json();
+
                 if (response.ok) {
                     const btn = document.createElement('button');
                     btn.textContent = name;
@@ -82,9 +84,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     showMemberSubTab(name);
                     document.getElementById('new_member_name').value = '';
 
-                    alert('Member added successfully!');
+                    alert(result.message);
                 } else {
-                    alert('Failed to add member');
+                    alert(result.message);
                 }
             } catch (error) {
                 alert(`Error: ${error.message}`);

@@ -31,6 +31,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "change_this_key_or_be_hacked")
 
 def get_members():
     try:
+        os.makedirs(os.path.dirname(MEMBERS_JSON_PATH), exist_ok=True)
         with open(MEMBERS_JSON_PATH, 'r') as file:
             data = json.load(file)
         return data
@@ -103,7 +104,7 @@ async def add_member_api(payload: dict = Body(...)):
         return JSONResponse(content={"status": "error", "message": "Member name cannot be empty."}, status_code=400)
 
     members = get_members()
-    if new_member in members:
+    if new_member.lower() in map(lambda x: x.lower(), members):
         return JSONResponse(content={"status": "error", "message": "Member already exists."}, status_code=400)
 
     members.append(new_member)

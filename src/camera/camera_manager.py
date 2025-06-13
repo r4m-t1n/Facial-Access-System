@@ -88,7 +88,7 @@ class CameraManager:
         while self._is_running:
             ret, frame = self._capture.read()
             if not ret:
-                print("[CameraManager] ERRPR: Failed to read frame from camera. Retrying...")
+                print("[CameraManager] ERROR: Failed to read frame from camera. Retrying...")
                 time.sleep(0.1)
                 continue
 

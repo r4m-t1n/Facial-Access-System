@@ -87,6 +87,7 @@ class CameraManager:
 
         while self._is_running:
             ret, frame = self._capture.read()
+            self._captured_frame = frame.copy()
             if not ret:
                 print("[CameraManager] ERROR: Failed to read frame from camera. Retrying...")
                 time.sleep(0.1)
@@ -131,9 +132,9 @@ class CameraManager:
                 print(f"[CameraManager] ERROR: Face recognition failed on a frame: {e}")
                 face_locations = []
                 face_names = []
-            
-            _, buf = cv2.imencode(".jpg", frame)
+
             with self._frame_lock:
+                _, buf = cv2.imencode(".jpg", frame)
                 self._current_frame_bytes = buf.tobytes()
 
 
@@ -169,6 +170,11 @@ class CameraManager:
     def get_latest_frame_bytes(self) -> bytes:
         with self._frame_lock:
             return self._current_frame_bytes
+    
+    def capture_frame(self) -> bytes:
+        with self._frame_lock:
+            _, buf = cv2.imencode(".jpg", self._captured_frame)
+            return buf.tobytes()
 
     def reload_face_encodings(self):
         print("[CameraManager] Reloading face encodings triggered.")

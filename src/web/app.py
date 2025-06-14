@@ -3,6 +3,7 @@ import sys
 import shutil
 from typing import List
 import json
+from datetime import datetime
 from fastapi import FastAPI, Request, Form, Body, File, UploadFile, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
@@ -189,3 +190,23 @@ async def live_camera_page(request: Request):
 @app.get("/video", dependencies=[Depends(check_user_auth)])
 async def video():
     return StreamingResponse(get_frame_bytes(), media_type="multipart/x-mixed-replace; boundary=frame")
+
+@app.post("/capture")
+def capture_image():
+    frame_bytes = camera_manager.capture_frame()
+
+    path = os.path.join(ROOT_DIR, "captured_photos")
+    os.makedirs(path, exist_ok=True)
+    filename = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
+
+    if frame_bytes:
+        with open(os.path.join(path, filename + ".jpg"), "wb") as file:
+            file.write(frame_bytes)
+            return JSONResponse(
+                content={"status": "success"}, status_code=200
+            )
+    else:
+        return JSONResponse(
+            content={"status": "error", "message": "Failed to capture image"},
+            status_code=500
+        )

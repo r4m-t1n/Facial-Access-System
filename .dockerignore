@@ -8,3 +8,5 @@ members.json
 *.pickle
 
 logs/
+
+captured_photos/

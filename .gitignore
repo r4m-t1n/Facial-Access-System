@@ -9,3 +9,5 @@ members.json
 
 logs/
 *.txt
+
+captured_photos/

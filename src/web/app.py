@@ -26,6 +26,8 @@ DATA_DIR = os.path.join(ROOT_DIR, 'data')
 MEMBERS_JSON_PATH = os.path.join(DATA_DIR, 'members.json')
 MEMBERS_DATA_PATH = os.path.join(DATA_DIR, 'members_data')
 
+CAPTURED_PHOTOS = os.path.join(ROOT_DIR, "captured_photos")
+
 USERNAME = os.environ.get("LOGIN_USERNAME", "admin")
 PASSWORD = os.environ.get("LOGIN_PASSWORD", "1234")
 SECRET_KEY = os.environ.get("SECRET_KEY", "change_this_key_or_be_hacked")
@@ -61,6 +63,7 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/captured_photos", StaticFiles(directory=CAPTURED_PHOTOS), name="captured_photos")
 
 async def check_user_auth(request: Request):
     if not request.session.get('is_logged_in'):
@@ -162,6 +165,21 @@ async def upload_photos(
         status_code=200
     )
 
+@app.post("/delete-photo")
+async def delete_photo(request: Request):
+    data = await request.json()
+    filename = data["filename"]
+    file_path = os.path.join(CAPTURED_PHOTOS, filename)
+
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return JSONResponse(
+            content={"message": f"{filename} deleted successfully."}, status_code=200
+        )
+    return JSONResponse(
+        content={"message": f"{filename} not found."}, status_code=404
+    )
+
 @app.post("/delete-member", dependencies=[Depends(check_user_auth)])
 async def delete_member(member: str = Form(...)):
     dir_name = os.path.join(MEMBERS_DATA_PATH, member)
@@ -191,16 +209,15 @@ async def live_camera_page(request: Request):
 async def video():
     return StreamingResponse(get_frame_bytes(), media_type="multipart/x-mixed-replace; boundary=frame")
 
-@app.post("/capture")
+@app.post("/capture", dependencies=[Depends(check_user_auth)])
 def capture_image():
     frame_bytes = camera_manager.capture_frame()
 
-    path = os.path.join(ROOT_DIR, "captured_photos")
-    os.makedirs(path, exist_ok=True)
+    os.makedirs(CAPTURED_PHOTOS, exist_ok=True)
     filename = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
 
     if frame_bytes:
-        with open(os.path.join(path, filename + ".jpg"), "wb") as file:
+        with open(os.path.join(CAPTURED_PHOTOS, filename + ".jpg"), "wb") as file:
             file.write(frame_bytes)
             return JSONResponse(
                 content={"status": "success"}, status_code=200
@@ -210,3 +227,28 @@ def capture_image():
             content={"status": "error", "message": "Failed to capture image"},
             status_code=500
         )
+
+@app.get("/captured-photos")
+def get_captured_photos():
+    files = os.listdir(CAPTURED_PHOTOS)
+    photos = [f for f in files]
+    return {"photos": photos}
+
+@app.get("/members")
+def members_to_js():
+    return {"members": get_members()}
+
+@app.post("/assign-photo")
+def assign_photo(member: str = Form(...), filename: str = Form(...)):
+    src_path = os.path.join(CAPTURED_PHOTOS, filename)
+    dest_dir = os.path.join(MEMBERS_DATA_PATH, member)
+
+    dest_path = os.path.join(dest_dir, filename)
+    shutil.move(src_path, dest_path)
+
+    retrain_model(member, [dest_path])
+    camera_manager.reload_face_encodings()
+
+    return JSONResponse(
+        {"message": f"Photo assigned to {member}."}, status_code=200
+    )

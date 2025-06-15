@@ -56,8 +56,7 @@ def retrain_model(member, photos):
 
     if result.returncode == 0:
         not_detected = json.loads(result.stdout)
+        return not_detected
     else:
-        print("Error:", result.stderr)
-
-
-    return not_detected
+        print("ERROR:", result.stderr)
+        return []

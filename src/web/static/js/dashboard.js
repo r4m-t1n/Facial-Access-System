@@ -157,3 +157,85 @@ async function deleteMember(member) {
         alert(`Error during deletion: ${error.message}`);
     }
 }
+
+async function loadAssignPhotos() {
+    const container = document.getElementById('assign-photos-container');
+    container.innerHTML = 'Loading...';
+
+    const response = await fetch('/captured-photos');
+    const result = await response.json();
+
+    const members = await fetch('/members').then(res => res.json());
+
+    container.innerHTML = '';
+
+    result.photos.forEach(photo => {
+        const photoBox = document.createElement('div');
+        photoBox.style.border = '1px solid #ccc';
+        photoBox.style.padding = '10px';
+        photoBox.style.textAlign = 'center';
+        photoBox.innerHTML = `
+            <img src="/captured_photos/${photo}" width="150"><br>
+            <select id="select-${photo}">
+                ${members.members.map(m => `<option value="${m}">${m}</option>`).join('')}
+            </select><br>
+            <button class="assign-btn" onclick="assignPhoto('${photo}')">Assign</button>
+            <button class="delete-btn" onclick="deletePhoto('${photo}')">Delete</button>
+        `;
+
+        container.appendChild(photoBox);
+    });
+}
+
+async function assignPhoto(filename) {
+    const button = event.target;
+    button.disabled = true;
+    button.innerText = 'Loading...';
+
+    const select = document.getElementById(`select-${filename}`);
+    const member = select.value;
+
+    const formData = new FormData();
+    formData.append('member', member);
+    formData.append('filename', filename);
+
+    try {
+        const response = await fetch('/assign-photo', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        alert(result.message)
+
+        button.parentElement.remove();
+    } catch (error) {
+
+        alert(`Error: ${error.message}`);
+
+    } finally {
+
+        button.disabled = false;
+        button.innerText = 'Assign';
+
+    }
+}
+
+async function deletePhoto(filename) {
+    const confirmDelete = confirm("Are you sure you want to delete this photo?");
+    if (!confirmDelete) return;
+
+    try {
+        const response = await fetch('/delete-photo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename })
+        });
+        const result = await response.json();
+        alert(result.message);
+    } catch (error) {
+        alert(`Error: ${error.message}`);
+    } finally {
+        loadAssignPhotos();
+    }
+}

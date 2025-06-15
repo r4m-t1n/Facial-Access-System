@@ -12,13 +12,21 @@
 <body>
     <div class="sidebar" id="sidebar">
         <button onclick="openLiveCamera()">Live</button>
+        <button onclick="showMainTab('assign')">Assign Photos</button>
         <button onclick="showMainTab('members')">Members</button> <hr>
+        
         {% for member in members %}
         <button onclick="showMemberSubTab('{{ member }}')">{{ member }}</button> {% endfor %}
         <hr>
         <button onclick="showMemberSubTab('add')">+ Add Member</button>
         <hr>
         <button onclick="window.location.href='/logout'" class="logout-button">Logout</button>
+    </div>
+
+    <div id="main-tab-assign" class="main-tab-content">
+        <h2>Assign Captured Photos to Members</h2>
+        <div id="assign-photos-container"></div>
+        <button class="reload-btn" onclick="loadAssignPhotos()">Reload</button>
     </div>
 
     <div class="main" id="main">

@@ -47,14 +47,12 @@ body {
 .main-tab-content.active {
     display: block;
 }
-
 .sub-tab-content {
     display: none;
 }
 .sub-tab-content.active {
     display: block;
 }
-
 form {
     margin-top: 20px;
     padding: 15px;
@@ -92,7 +90,49 @@ form button[type="button"]:hover,
     background-color: #dc3545;
     color: white;
 }
-
 .sidebar .logout-button:hover {
     background-color: #c82333;
+}
+.reload-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 15px;
+    transition: background-color 0.3s ease;
+}
+.reload-btn:hover {
+    background-color: #0056b3;
+}
+.assign-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 5px;
+}
+.assign-btn:hover {
+    background-color: #218838;
+}
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 5px;
+}
+.delete-btn:hover {
+    background-color: #c82333;
+}
+#assign-photos-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
 }

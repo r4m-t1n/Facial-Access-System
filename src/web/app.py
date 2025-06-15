@@ -228,17 +228,17 @@ def capture_image():
             status_code=500
         )
 
-@app.get("/captured-photos")
+@app.get("/captured-photos", dependencies=[Depends(check_user_auth)])
 def get_captured_photos():
     files = os.listdir(CAPTURED_PHOTOS)
     photos = [f for f in files]
     return {"photos": photos}
 
-@app.get("/members")
+@app.get("/members", dependencies=[Depends(check_user_auth)])
 def members_to_js():
     return {"members": get_members()}
 
-@app.post("/assign-photo")
+@app.post("/assign-photo", dependencies=[Depends(check_user_auth)])
 def assign_photo(member: str = Form(...), filename: str = Form(...)):
     src_path = os.path.join(CAPTURED_PHOTOS, filename)
     dest_dir = os.path.join(MEMBERS_DATA_PATH, member)

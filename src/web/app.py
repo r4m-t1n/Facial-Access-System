@@ -4,6 +4,7 @@ import shutil
 from typing import List
 import json
 from datetime import datetime
+import aiofiles
 from fastapi import FastAPI, Request, Form, Body, File, UploadFile, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
@@ -210,18 +211,17 @@ async def video():
     return StreamingResponse(get_frame_bytes(), media_type="multipart/x-mixed-replace; boundary=frame")
 
 @app.post("/capture", dependencies=[Depends(check_user_auth)])
-def capture_image():
+async def capture_image():
     frame_bytes = camera_manager.capture_frame()
 
     os.makedirs(CAPTURED_PHOTOS, exist_ok=True)
     filename = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
 
     if frame_bytes:
-        with open(os.path.join(CAPTURED_PHOTOS, filename + ".jpg"), "wb") as file:
-            file.write(frame_bytes)
-            return JSONResponse(
-                content={"status": "success"}, status_code=200
-            )
+        filepath = os.path.join(CAPTURED_PHOTOS, filename + ".jpg")
+        async with aiofiles.open(filepath, "wb") as file:
+            await file.write(frame_bytes)
+        return JSONResponse(content={"status": "success"}, status_code=200)
     else:
         return JSONResponse(
             content={"status": "error", "message": "Failed to capture image"},

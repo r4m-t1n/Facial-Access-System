@@ -6,5 +6,6 @@ opencv-python==4.11.0.86
 python-dotenv==1.1.0
 uvicorn[standard]==0.34.2
 itsdangerous==2.2.0
+aiofiles==24.1.0
 dlib
 face-recognition

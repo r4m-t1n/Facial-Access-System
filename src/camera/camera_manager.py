@@ -173,8 +173,9 @@ class CameraManager:
     
     def capture_frame(self) -> bytes:
         with self._frame_lock:
-            _, buf = cv2.imencode(".jpg", self._captured_frame)
-            return buf.tobytes()
+            if hasattr(self, "_captured_frame") and self._captured_frame is not None:
+                _, buf = cv2.imencode(".jpg", self._captured_frame)
+                return buf.tobytes()
 
     def reload_face_encodings(self):
         print("[CameraManager] Reloading face encodings triggered.")

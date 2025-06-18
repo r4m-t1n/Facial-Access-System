@@ -47,7 +47,7 @@ The ultimate goal for this project is to make a real-world, DIY smart lock. It's
     *The port is set to 8000, however you can change and set it to whatever port number you want.*
 
 3.  **Check it out:**
-    Open your web browser and go to `http://localhost:8000`.
+    Open your web browser and go to `http://localhost:8000` (or `https://ip-address:8000`).
 
 ### Running Locally (Without Docker)
 
@@ -80,7 +80,7 @@ The ultimate goal for this project is to make a real-world, DIY smart lock. It's
 
 ## How to Use the App
 
-1.  Go to `http://localhost:8000` and log in.
+1.  Go to `http://localhost:8000` (or `https://ip-address:8000`) and log in.
 2.  In the sidebar, click `+ Add Member` and type in a name.
 3.  A new button with that person's name will appear. Click it.
 4.  Upload a few clear photos of their face and click 'Upload Photo'.

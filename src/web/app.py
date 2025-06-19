@@ -251,4 +251,4 @@ def assign_photo(member: str = Form(...), filename: str = Form(...)):
 
     return JSONResponse(
         {"message": f"Photo assigned to {member}."}, status_code=200
-    )
+    ) 
